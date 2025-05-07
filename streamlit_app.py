@@ -10,7 +10,6 @@ from typing import List, Dict, Any
 
 from langchain_openai import AzureChatOpenAI
 from langchain_openai import ChatOpenAI
-from langchain_ollama import ChatOllama
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
