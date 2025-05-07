@@ -27,24 +27,24 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or st.secrets.get("GITHUB_TOKEN", 
 OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY") or st.secrets.get("OPEN_AI_API", "")
 
 # Initialize LLM
-# @st.cache_resource
-# def get_llm():
-#     return ChatOpenAI(
-#         model_name="gpt-4.1-nano",
-#         temperature=1,
-#         openai_api_key=OPEN_AI_API_KEY,
-#     )
-
 @st.cache_resource
 def get_llm():
-    return AzureChatOpenAI(
-    azure_endpoint="https://models.inference.ai.azure.com",
-    azure_deployment="gpt-4.1-nano",
-    openai_api_version="2025-03-01-preview", 
-    model_name="gpt-4.1-nano",
-    temperature=1,
-    api_key=GITHUB_TOKEN,
+    return ChatOpenAI(
+        model_name="gpt-4.1-nano",
+        temperature=1,
+        openai_api_key=OPEN_AI_API_KEY,
     )
+
+# @st.cache_resource
+# def get_llm():
+#     return AzureChatOpenAI(
+#     azure_endpoint="https://models.inference.ai.azure.com",
+#     azure_deployment="gpt-4.1-nano",
+#     openai_api_version="2025-03-01-preview", 
+#     model_name="gpt-4.1-nano",
+#     temperature=1,
+#     api_key=GITHUB_TOKEN,
+#     )
 
 # Pydantic models
 class Metadata(BaseModel):
@@ -295,26 +295,20 @@ select_choose_or_upload()
 
 if st.session_state.file_option == "Use example files":
     text, summary, temp_file, selected_example = select_choose()
-    
     # Only show results if analysis has been performed
     if summary is not None and text is not None and temp_file is not None:
         st.markdown("---")
         st.markdown("## 2 | PRD Details")
-        display_result(original_text=text, summary=summary, file_object=temp_file)
-             
+        display_result(original_text=text, summary=summary, file_object=temp_file)       
 else:
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"], label_visibility='hidden')
     if uploaded_file is not None:
         text, summary, uploaded_file = select_upload(uploaded_file)
-        
         # Only show results if we have valid data
         if summary is not None:
             st.markdown("---")
             st.markdown("## 2 | Extracted Information")
             display_result(original_text=text, summary=summary, file_object=uploaded_file)
-                
-# else:
-#     st.info("Please upload a PDF file to begin.")
 
 st.markdown("---")
 footer_credit()
