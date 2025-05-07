@@ -197,7 +197,7 @@ def display_result(original_text, summary, file_object):
 
 # File uploader
 # Replace the current pills component with these buttons
-st.markdown("## 1 | Choose Example or Upload Files:")
+st.markdown("## 1 | Choose Example PRDs or Upload:")
 
 # Initialize session state if needed
 if "file_option" not in st.session_state:
@@ -207,7 +207,7 @@ if "file_option" not in st.session_state:
 left, right = st.columns(2)
 
 # Create the two buttons
-if left.button("Example Files", type="secondary", use_container_width=True, icon="📄"):
+if left.button("Example PRDs", type="secondary", use_container_width=True, icon="📄"):
     st.session_state.file_option = "Use example files"
     
 if right.button("Upload", type="secondary", use_container_width=True, icon="📤"):
@@ -225,8 +225,8 @@ if st.session_state.file_option == "Use example files":
                                     placeholder="Select an example PRD",
                                     label_visibility='hidden')
     
-    if st.button("Process Example File", type="primary", icon="🔍"):
-        with st.spinner(f"Processing {selected_example}..."):
+    if st.button("Analyze PRD", type="primary", icon="🔍"):
+        with st.spinner(f"Analyzing {selected_example}..."):
             example_filename = example_files[selected_example]
             file_path = os.path.join(os.path.dirname(__file__), example_filename)
             
