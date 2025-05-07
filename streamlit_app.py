@@ -17,9 +17,9 @@ from pydantic import BaseModel, Field
 from markitdown import MarkItDown
 
 # Set page title and configure the page
-st.set_page_config(page_title="Smart PRD", layout="wide")
-st.title("Smart-PRD")
-st.write("AI-Powered Requirement Management Engineer.")
+st.set_page_config(page_title="Smart PRD", layout="centered")
+st.title("Smart-PRD :computer:")
+st.write("AI-Powered Requirement Management Engineer")
 st.markdown("---")
 
 # Load environment variables
@@ -196,25 +196,37 @@ def display_result(original_text, summary, file_object):
     )
 
 # File uploader
+# Replace the current pills component with these buttons
+st.markdown("### Choose Example or Upload Files:")
 
-# File selection
-file_option = st.radio(
-    "Choose how to input a PRD file:",
-    ["Use example files", "Upload my own file"],
-    horizontal=True
-)
+# Initialize session state if needed
+if "file_option" not in st.session_state:
+    st.session_state.file_option = None
 
-if file_option == "Use example files":
+# Create a two-column layout for the buttons
+left, right = st.columns(2)
+
+# Create the two buttons
+if left.button("Example Files", type="secondary", use_container_width=True, icon="📄"):
+    st.session_state.file_option = "Use example files"
+    
+if right.button("Upload", type="secondary", use_container_width=True, icon="📤"):
+    st.session_state.file_option = "Upload my own file"
+
+if st.session_state.file_option == "Use example files":
     example_files = {
         "Homepage Change PRD": "PRD_Homepage_Change.pdf",
         "Baby Tracker App PRD": "PRD_Simple_Baby_Tracker_App.pdf"
     }
     
-    selected_example = st.selectbox("Select an example PRD", list(example_files.keys()))
+    selected_example = st.selectbox(label="Select an example PRD",
+                                    options=list(example_files.keys()), 
+                                    index=None,
+                                    placeholder="Select an example PRD",
+                                    label_visibility='hidden')
     
-    if st.button("Process Example File"):
+    if st.button("Process Example File", type="primary", icon="🔍"):
         with st.spinner(f"Processing {selected_example}..."):
-            # Get the filename of the selected example
             example_filename = example_files[selected_example]
             file_path = os.path.join(os.path.dirname(__file__), example_filename)
             
@@ -233,32 +245,24 @@ if file_option == "Use example files":
             
             temp_file = TempFile(file_content, example_filename)
             
-            # Process the example file
             text = convert_to_md(temp_file)
             summary = extract_prd(text)
 
-            # Rest of your display code remains the same
             st.markdown("---")
             st.markdown("## Extracted Text")
-            
-            # Display the results
             display_result(original_text=text, summary=summary, file_object=temp_file)
 
                 
 else:
-    # Original file uploader
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"], label_visibility='hidden')
     
     if uploaded_file is not None:
         with st.spinner("Processing the PDF..."):
-            # Convert PDF to text
             text = convert_to_md(uploaded_file)
             summary = extract_prd(text)
             
-            # Rest of your existing code for displaying results
             st.markdown("---")
             st.markdown("## Extracted Text")
-            # Display the results
             display_result(original_text=text, summary=summary, file_object=uploaded_file)
                 
 # else:
