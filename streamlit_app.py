@@ -115,91 +115,90 @@ def convert_to_md(uploaded_file):
 uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"], label_visibility='hidden')
 
 if uploaded_file is not None:
-    if st.button("Extract PRD Metadata"):
-        with st.spinner("Processing the PDF..."):
-            try:
-                # Convert PDF to text
-                text = convert_to_md(uploaded_file)
-                summary = extract_prd(text)
+    with st.spinner("Processing the PDF..."):
+        try:
+            # Convert PDF to text
+            text = convert_to_md(uploaded_file)
+            summary = extract_prd(text)
 
-                st.markdown("---")
-                st.markdown("## Extracted Text")
+            st.markdown("---")
+            st.markdown("## Extracted Text")
+            
+            # Display the results
+            ## Metadata
+            st.markdown("### Metadata")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Document Title**")
+                st.write(summary.metadata.document_title)
                 
-                # Display the results
-                ## Metadata
-                st.markdown("### Metadata")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("**Document Title**")
-                    st.write(summary.metadata.document_title)
-                    
-                    st.markdown("**Document Date**")
-                    st.write(summary.metadata.document_date)
+                st.markdown("**Document Date**")
+                st.write(summary.metadata.document_date)
+            
+            with col2:
+                st.markdown("**Document Status**")
+                st.write(summary.metadata.document_status)
                 
-                with col2:
-                    st.markdown("**Document Status**")
-                    st.write(summary.metadata.document_status)
-                    
-                    st.markdown("**Document Author**")
-                    st.write(summary.metadata.document_author)
+                st.markdown("**Document Author**")
+                st.write(summary.metadata.document_author)
 
-                ## Person
-                st.markdown("### Person")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("**Person Name**")
-                    st.write(summary.person.name)
+            ## Person
+            st.markdown("### Person")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Person Name**")
+                st.write(summary.person.name)
 
-                    st.markdown("**Person Role**")
-                    st.write(summary.person.role)
+                st.markdown("**Person Role**")
+                st.write(summary.person.role)
 
-                with col2:
-                    st.markdown("**Person Email**")
-                    st.write(summary.person.email)
+            with col2:
+                st.markdown("**Person Email**")
+                st.write(summary.person.email)
 
-                ## Problem
-                st.markdown("### Problem")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("**Vision & Opportunity**")
-                    st.write(summary.problem.vision_opportunity)
+            ## Problem
+            st.markdown("### Problem")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Vision & Opportunity**")
+                st.write(summary.problem.vision_opportunity)
 
-                with col2:
-                    st.markdown("**Target Use Case**")
-                    st.write(summary.problem.target_use_case)
+            with col2:
+                st.markdown("**Target Use Case**")
+                st.write(summary.problem.target_use_case)
 
-                ## Solution
-                st.markdown("### Solution")
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("**Goals**")
-                    st.write(summary.solution.goals)
+            ## Solution
+            st.markdown("### Solution")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Goals**")
+                st.write(summary.solution.goals)
 
-                    st.markdown("**Conceptual Model**")
-                    st.write(summary.solution.conceptual_model)
+                st.markdown("**Conceptual Model**")
+                st.write(summary.solution.conceptual_model)
 
-                with col2:
-                    st.markdown("**Requirements**")
-                    st.write(summary.solution.requirements)
+            with col2:
+                st.markdown("**Requirements**")
+                st.write(summary.solution.requirements)
 
-                with st.expander("Original Document"):
-                    st.text(text[:500] + "...")
+            with st.expander("Original Document"):
+                st.text(text[:500] + "...")
 
-                with st.expander("JSON Output"):
-                    st.json(summary.model_dump())
-                
-                # Download JSON
-                json_str = summary.model_dump_json(indent=2)
-                st.download_button(
-                    label="Download JSON",
-                    data=json_str,
-                    file_name=f"{uploaded_file.name.split('.')[0]}_metadata.json",
-                    mime="application/json"
-                )
-                
-            except Exception as e:
-                st.error(f"Error processing the file: {str(e)}")
-                st.write("Please make sure you've uploaded a valid PDF file and that your API keys are correctly set.")
+            with st.expander("JSON Output"):
+                st.json(summary.model_dump())
+            
+            # Download JSON
+            json_str = summary.model_dump_json(indent=2)
+            st.download_button(
+                label="Download JSON",
+                data=json_str,
+                file_name=f"{uploaded_file.name.split('.')[0]}_metadata.json",
+                mime="application/json"
+            )
+            
+        except Exception as e:
+            st.error(f"Error processing the file: {str(e)}")
+            st.write("Please make sure you've uploaded a valid PDF file and that your API keys are correctly set.")
 else:
     st.info("Please upload a PDF file to begin.")
 
