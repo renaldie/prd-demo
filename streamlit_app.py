@@ -100,7 +100,13 @@ def extract_prd(prd):
     LLM = get_llm()
     chain = prd_prompt_template | LLM | summary_parser
     output = chain.invoke(input={"prd": prd})
-    return output
+    return clean_text(output)
+
+def clean_text(text):
+    match = re.search(r'\{.*\}', text, re.DOTALL)
+    json_str = match.group(0)
+    json_obj = json.loads(json_str)
+    return Summary.model_validate(json_obj)
 
 def convert_to_md(uploaded_file):
     with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp_file:
@@ -198,7 +204,6 @@ if uploaded_file is not None:
             
         except Exception as e:
             st.error(f"Error processing the file: {str(e)}")
-            st.write("Please make sure you've uploaded a valid PDF file and that your API keys are correctly set.")
 else:
     st.info("Please upload a PDF file to begin.")
 
