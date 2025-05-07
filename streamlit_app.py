@@ -249,7 +249,7 @@ if st.session_state.file_option == "Use example files":
             summary = extract_prd(text)
 
             st.markdown("---")
-            st.markdown("## 2 | Extracted Text")
+            st.markdown("## 2 | Extracted Information")
             display_result(original_text=text, summary=summary, file_object=temp_file)
 
                 
