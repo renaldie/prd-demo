@@ -23,8 +23,8 @@ st.write("AI-Powered Requirement Management Engineer")
 st.markdown("---")
 
 # Load environment variables
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or st.secrets.get("GITHUB_TOKEN", "")
-OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY") or st.secrets.get("OPEN_AI_API", "")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or st.secrets.get("GITHUB_TOKEN")
+OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY") or st.secrets.get("OPEN_AI_API_KEY")
 
 # Initialize LLM
 @st.cache_resource
