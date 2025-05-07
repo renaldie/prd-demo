@@ -197,7 +197,7 @@ def display_result(original_text, summary, file_object):
 
 # File uploader
 # Replace the current pills component with these buttons
-st.markdown("### Choose Example or Upload Files:")
+st.markdown("## 1 | Choose Example or Upload Files:")
 
 # Initialize session state if needed
 if "file_option" not in st.session_state:
@@ -249,7 +249,7 @@ if st.session_state.file_option == "Use example files":
             summary = extract_prd(text)
 
             st.markdown("---")
-            st.markdown("## Extracted Text")
+            st.markdown("## 2 | Extracted Text")
             display_result(original_text=text, summary=summary, file_object=temp_file)
 
                 
