@@ -67,8 +67,8 @@ class Problem(BaseModel):
 
 class Solution(BaseModel):
     """Solution to the problem"""
-    goals: str = Field(description="The goals of the solution", default=None)
-    conceptual_model: str = Field(description="The conceptual model of the solution", default=None)
+    goals: Any = Field(description="The goals of the solution", default=None)
+    conceptual_model: Any = Field(description="The conceptual model of the solution", default=None)
     requirements: List[str] = Field(description="The requirements of the solution", default=None)
 
 class Summary(BaseModel):
