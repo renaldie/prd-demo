@@ -48,27 +48,27 @@ def get_llm():
 # Pydantic models
 class Metadata(BaseModel):
     """Metadata of the document."""
-    document_title: str = Field(description="The name of the document", default="")
-    document_date: str = Field(description="The date of the document", default="")
-    document_status: str = Field(description="The status of the document", default="")
-    document_author: str = Field(description="The author of the document", default="")
+    document_title: Any = Field(description="The name of the document", default=None)
+    document_date: Any = Field(description="The date of the document", default=None)
+    document_status: Any = Field(description="The status of the document", default=None)
+    document_author: Any = Field(description="The author of the document", default=None)
 
 class Person(BaseModel):
     """Person in the document beside the author."""
-    name: str = Field(description="The name of the person beside the author", default="")
-    role: str = Field(description="The role of the person beside the author", default="")
-    email: str = Field(description="The email of the person beside the author", default="")
+    name: Any = Field(description="The name of the person beside the author", default=None)
+    role: Any = Field(description="The role of the person beside the author", default=None)
+    email: Any = Field(description="The email of the person beside the author", default=None)
 
 class Problem(BaseModel):
     """Overview of the meeting minutes"""
-    vision_opportunity: str = Field(description="The Vision & Opportunity of the document", default="")
-    target_use_case: str = Field(description="The Target Use Case of the document", default="")
+    vision_opportunity: Any = Field(description="The Vision & Opportunity of the document", default=None)
+    target_use_case: Any = Field(description="The Target Use Case of the document", default=None)
 
 class Solution(BaseModel):
     """Solution to the problem"""
-    goals: str = Field(description="The goals of the solution", default="")
-    conceptual_model: str = Field(description="The conceptual model of the solution", default="")
-    requirements: List[str] = Field(description="The requirements of the solution", default="")
+    goals: str = Field(description="The goals of the solution", default=None)
+    conceptual_model: str = Field(description="The conceptual model of the solution", default=None)
+    requirements: List[str] = Field(description="The requirements of the solution", default=None)
 
 class Summary(BaseModel):
     metadata: Metadata = Field(description="The metadata of the document")
