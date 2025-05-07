@@ -27,24 +27,24 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or st.secrets.get("GITHUB_TOKEN", 
 OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY") or st.secrets.get("OPEN_AI_API", "")
 
 # Initialize LLM
-@st.cache_resource
-def get_llm():
-    return ChatOpenAI(
-        model_name="gpt-4.1-nano",
-        temperature=1,
-        openai_api_key=OPEN_AI_API_KEY,
-    )
-
 # @st.cache_resource
 # def get_llm():
-#     return AzureChatOpenAI(
-#     azure_endpoint="https://models.inference.ai.azure.com",
-#     azure_deployment="gpt-4.1-nano",
-#     openai_api_version="2025-03-01-preview", 
-#     model_name="gpt-4.1-nano",
-#     temperature=1,
-#     api_key=GITHUB_TOKEN,
+#     return ChatOpenAI(
+#         model_name="gpt-4.1-nano",
+#         temperature=1,
+#         openai_api_key=OPEN_AI_API_KEY,
 #     )
+
+@st.cache_resource
+def get_llm():
+    return AzureChatOpenAI(
+    azure_endpoint="https://models.inference.ai.azure.com",
+    azure_deployment="gpt-4.1-nano",
+    openai_api_version="2025-03-01-preview", 
+    model_name="gpt-4.1-nano",
+    temperature=1,
+    api_key=GITHUB_TOKEN,
+    )
 
 # Pydantic models
 class Metadata(BaseModel):
@@ -79,7 +79,9 @@ class Summary(BaseModel):
 
 summary_parser = PydanticOutputParser(pydantic_object=Summary)
 
-def extract_prd(prd):
+def extract_prd(prd, max_retries=3):
+    """Extract PRD info with simple retry mechanism"""
+    
     prd_template = """"
     You are an expert in analyzing Product Requirements Documents (PRDs).
     Your task is to extract software requirements from the provided PRD text.
@@ -105,8 +107,19 @@ def extract_prd(prd):
 
     LLM = get_llm()
     chain = prd_prompt_template | LLM | summary_parser
-    output = chain.invoke(input={"prd": prd})
-    return output
+    
+    # Simple retry logic
+    for attempt in range(max_retries):
+        try:
+            output = chain.invoke(input={"prd": prd})
+            return output  # Return immediately on success
+        except Exception as e:
+            if attempt == max_retries - 1:  # If this was the last attempt
+                st.error(f"All attempts failed. Last error: {str(e)}")
+                return None  # Return None after all retries fail
+    
+    # Should never reach here, but just in case
+    return None
 
 def clean_text(text):
     match = re.search(r'\{.*\}', text, re.DOTALL)
@@ -195,25 +208,39 @@ def display_result(original_text, summary, file_object):
         mime="application/json"
     )
 
-# File uploader
-# Replace the current pills component with these buttons
-st.markdown("## 1 | Choose Example PRDs or Upload:")
+def footer_credit():
+    cols = st.columns([2, 1, 2])
+    with cols[1]:
+        st.markdown(
+            """
+            <div style="text-align: center">
+                © 2025 Smart PRD<br>
+                Made by <a href="https://renaldi-ega.notion.site" target="_blank">Ren</a> in Hsinchu with ❤️<br>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
 
-# Initialize session state if needed
-if "file_option" not in st.session_state:
-    st.session_state.file_option = "Use example files"  # Set default here
+def select_choose_or_upload():
+    # Create a two-column layout for the buttons
+    left, right = st.columns(2)
 
-# Create a two-column layout for the buttons
-left, right = st.columns(2)
+    # Create the two buttons
+    if left.button("Example PRDs", type="secondary", use_container_width=True, icon="📄"):
+        st.session_state.file_option = "Use example files"
+        
+    if right.button("Upload", type="secondary", use_container_width=True, icon="📤"):
+        st.session_state.file_option = "Upload my own file"
 
-# Create the two buttons
-if left.button("Example PRDs", type="secondary", use_container_width=True, icon="📄"):
-    st.session_state.file_option = "Use example files"
+    return st.session_state.file_option
+
+def select_choose():
+    # Initialize variables with default values
+    text = None
+    summary = None
+    temp_file = None
+    selected_example = None
     
-if right.button("Upload", type="secondary", use_container_width=True, icon="📤"):
-    st.session_state.file_option = "Upload my own file"
-
-if st.session_state.file_option == "Use example files":
     example_files = {
         "Homepage Change PRD": "PRD_Homepage_Change.pdf",
         "Baby Tracker App PRD": "PRD_Simple_Baby_Tracker_App.pdf"
@@ -225,7 +252,7 @@ if st.session_state.file_option == "Use example files":
                                     placeholder="Select an example PRD",
                                     label_visibility='hidden')
     
-    if st.button("Analyze PRD", type="primary", icon="🔍"):
+    if selected_example and st.button("Analyze PRD", type="primary", icon="🔍"):
         with st.spinner(f"Analyzing {selected_example}..."):
             example_filename = example_files[selected_example]
             file_path = os.path.join(os.path.dirname(__file__), example_filename)
@@ -248,24 +275,46 @@ if st.session_state.file_option == "Use example files":
             text = convert_to_md(temp_file)
             summary = extract_prd(text)
 
-            st.markdown("---")
-            st.markdown("## 2 | Extracted Information")
-            display_result(original_text=text, summary=summary, file_object=temp_file)
+    return text, summary, temp_file, selected_example
 
-                
+def select_upload(uploaded_file):
+    with st.spinner("Processing the PDF..."):
+        text = convert_to_md(uploaded_file)
+        summary = extract_prd(text)
+    return text, summary, uploaded_file
+
+# File uploader
+# Replace the current pills component with these buttons
+st.markdown("## 1 | Choose Example PRDs or Upload:")
+
+# Initialize session state if needed
+if "file_option" not in st.session_state:
+    st.session_state.file_option = "Use example files"  # Set default here
+
+select_choose_or_upload()
+
+if st.session_state.file_option == "Use example files":
+    text, summary, temp_file, selected_example = select_choose()
+    
+    # Only show results if analysis has been performed
+    if summary is not None and text is not None and temp_file is not None:
+        st.markdown("---")
+        st.markdown("## 2 | Extracted Information")
+        display_result(original_text=text, summary=summary, file_object=temp_file)
+             
 else:
     uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"], label_visibility='hidden')
-    
     if uploaded_file is not None:
-        with st.spinner("Processing the PDF..."):
-            text = convert_to_md(uploaded_file)
-            summary = extract_prd(text)
-            
+        text, summary, uploaded_file = select_upload(uploaded_file)
+        
+        # Only show results if we have valid data
+        if summary is not None:
             st.markdown("---")
-            st.markdown("## Extracted Text")
+            st.markdown("## 2 | Extracted Information")
             display_result(original_text=text, summary=summary, file_object=uploaded_file)
                 
 # else:
 #     st.info("Please upload a PDF file to begin.")
 
 st.markdown("---")
+footer_credit()
