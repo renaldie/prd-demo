@@ -299,7 +299,7 @@ if st.session_state.file_option == "Use example files":
     # Only show results if analysis has been performed
     if summary is not None and text is not None and temp_file is not None:
         st.markdown("---")
-        st.markdown("## 2 | Extracted Information")
+        st.markdown("## 2 | PRD Details")
         display_result(original_text=text, summary=summary, file_object=temp_file)
              
 else:
