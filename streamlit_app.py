@@ -2,6 +2,7 @@ import os
 import tempfile
 import json
 import streamlit as st
+import re
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -100,7 +101,7 @@ def extract_prd(prd):
     LLM = get_llm()
     chain = prd_prompt_template | LLM | summary_parser
     output = chain.invoke(input={"prd": prd})
-    return clean_text(output)
+    return output
 
 def clean_text(text):
     match = re.search(r'\{.*\}', text, re.DOTALL)
