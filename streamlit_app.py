@@ -69,7 +69,7 @@ class Solution(BaseModel):
     """Solution to the problem"""
     goals: Any = Field(description="The goals of the solution", default=None)
     conceptual_model: Any = Field(description="The conceptual model of the solution", default=None)
-    requirements: List[str] = Field(description="The requirements of the solution", default=None)
+    requirements: Any = Field(description="The requirements of the solution", default=None)
 
 class Summary(BaseModel):
     metadata: Metadata = Field(description="The metadata of the document")
@@ -86,10 +86,15 @@ def extract_prd(prd):
     
     PRD text: {prd}
     
-    For each PRD text, provide the following information:
+    For each PRD text, find the following information:
+    - metadata: object with document_title, document_date, document_status, document_author
+    - person: object with name, role, email of key stakeholders
+    - problem: object with vision_opportunity and target_use_case
+    - solution: object with goals, conceptual_model, and requirements
     {format_instructions}
-    
-    If a section doesn't contain any requirements, output nothing for that section.
+
+    IMPORTANT: Format all above-mentioned objects as string or list of strings only.
+    If a section doesn't contain anything, output null for that section.
     """
 
     prd_prompt_template = PromptTemplate(
@@ -118,94 +123,145 @@ def convert_to_md(uploaded_file):
     result = md.convert(tmp_file_path)
     return result.text_content
 
-# File uploader
-uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"], label_visibility='hidden')
+def display_result(original_text, summary, file_object):
+    ## Metadata
+    st.markdown("### Metadata")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Document Title**")
+        st.write(summary.metadata.document_title)
+        
+        st.markdown("**Document Date**")
+        st.write(summary.metadata.document_date)
+    
+    with col2:
+        st.markdown("**Document Status**")
+        st.write(summary.metadata.document_status)
+        
+        st.markdown("**Document Author**")
+        st.write(summary.metadata.document_author)
 
-if uploaded_file is not None:
-    with st.spinner("Processing the PDF..."):
-        try:
-            # Convert PDF to text
-            text = convert_to_md(uploaded_file)
+    ## Person
+    st.markdown("### Person")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Person Name**")
+        st.write(summary.person.name)
+
+        st.markdown("**Person Role**")
+        st.write(summary.person.role)
+
+    with col2:
+        st.markdown("**Person Email**")
+        st.write(summary.person.email)
+
+    ## Problem
+    st.markdown("### Problem")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Vision & Opportunity**")
+        st.write(summary.problem.vision_opportunity)
+
+    with col2:
+        st.markdown("**Target Use Case**")
+        st.write(summary.problem.target_use_case)
+
+    ## Solution
+    st.markdown("### Solution")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Goals**")
+        st.write(summary.solution.goals)
+
+        st.markdown("**Conceptual Model**")
+        st.write(summary.solution.conceptual_model)
+
+    with col2:
+        st.markdown("**Requirements**")
+        st.write(summary.solution.requirements)
+
+    with st.expander("Original Document"):
+        st.text(original_text[:500] + "...")
+
+    with st.expander("JSON Output"):
+        st.json(summary.model_dump())
+    
+    # Download JSON
+    json_str = summary.model_dump_json(indent=2)
+    st.download_button(
+        label="Download JSON",
+        data=json_str,
+        file_name=f"{file_object.name.split('.')[0]}_metadata.json",
+        mime="application/json"
+    )
+
+# File uploader
+
+# File selection
+file_option = st.radio(
+    "Choose how to input a PRD file:",
+    ["Use example files", "Upload my own file"],
+    horizontal=True
+)
+
+if file_option == "Use example files":
+    example_files = {
+        "Homepage Change PRD": "PRD_Homepage_Change.pdf",
+        "Baby Tracker App PRD": "PRD_Simple_Baby_Tracker_App.pdf"
+    }
+    
+    selected_example = st.selectbox("Select an example PRD", list(example_files.keys()))
+    
+    if st.button("Process Example File"):
+        with st.spinner(f"Processing {selected_example}..."):
+            # Get the filename of the selected example
+            example_filename = example_files[selected_example]
+            file_path = os.path.join(os.path.dirname(__file__), example_filename)
+            
+            # Read the file content
+            with open(file_path, "rb") as file:
+                file_content = file.read()
+            
+            # Create a temporary file object similar to what st.file_uploader would provide
+            class TempFile:
+                def __init__(self, content, name):
+                    self.content = content
+                    self.name = name
+                
+                def getvalue(self):
+                    return self.content
+            
+            temp_file = TempFile(file_content, example_filename)
+            
+            # Process the example file
+            text = convert_to_md(temp_file)
             summary = extract_prd(text)
 
+            # Rest of your display code remains the same
             st.markdown("---")
             st.markdown("## Extracted Text")
             
             # Display the results
-            ## Metadata
-            st.markdown("### Metadata")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**Document Title**")
-                st.write(summary.metadata.document_title)
+            display_result(original_text=text, summary=summary, file_object=temp_file)
+
                 
-                st.markdown("**Document Date**")
-                st.write(summary.metadata.document_date)
-            
-            with col2:
-                st.markdown("**Document Status**")
-                st.write(summary.metadata.document_status)
-                
-                st.markdown("**Document Author**")
-                st.write(summary.metadata.document_author)
-
-            ## Person
-            st.markdown("### Person")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**Person Name**")
-                st.write(summary.person.name)
-
-                st.markdown("**Person Role**")
-                st.write(summary.person.role)
-
-            with col2:
-                st.markdown("**Person Email**")
-                st.write(summary.person.email)
-
-            ## Problem
-            st.markdown("### Problem")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**Vision & Opportunity**")
-                st.write(summary.problem.vision_opportunity)
-
-            with col2:
-                st.markdown("**Target Use Case**")
-                st.write(summary.problem.target_use_case)
-
-            ## Solution
-            st.markdown("### Solution")
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown("**Goals**")
-                st.write(summary.solution.goals)
-
-                st.markdown("**Conceptual Model**")
-                st.write(summary.solution.conceptual_model)
-
-            with col2:
-                st.markdown("**Requirements**")
-                st.write(summary.solution.requirements)
-
-            with st.expander("Original Document"):
-                st.text(text[:500] + "...")
-
-            with st.expander("JSON Output"):
-                st.json(summary.model_dump())
-            
-            # Download JSON
-            json_str = summary.model_dump_json(indent=2)
-            st.download_button(
-                label="Download JSON",
-                data=json_str,
-                file_name=f"{uploaded_file.name.split('.')[0]}_metadata.json",
-                mime="application/json"
-            )
-            
-        except Exception as e:
-            st.error(f"Error processing the file: {str(e)}")
 else:
-    st.info("Please upload a PDF file to begin.")
+    # Original file uploader
+    uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"], label_visibility='hidden')
+    
+    if uploaded_file is not None:
+        with st.spinner("Processing the PDF..."):
+            # Convert PDF to text
+            text = convert_to_md(uploaded_file)
+            summary = extract_prd(text)
+            
+            # Rest of your existing code for displaying results
+            st.markdown("---")
+            st.markdown("## Extracted Text")
+            # Display the results
+            display_result(original_text=text, summary=summary, file_object=uploaded_file)
+                
+# else:
+#     st.info("Please upload a PDF file to begin.")
 
 st.markdown("---")
