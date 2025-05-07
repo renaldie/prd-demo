@@ -201,7 +201,7 @@ st.markdown("### Choose Example or Upload Files:")
 
 # Initialize session state if needed
 if "file_option" not in st.session_state:
-    st.session_state.file_option = None
+    st.session_state.file_option = "Use example files"  # Set default here
 
 # Create a two-column layout for the buttons
 left, right = st.columns(2)
