@@ -27,24 +27,24 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or st.secrets.get("GITHUB_TOKEN")
 OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY") or st.secrets.get("OPEN_AI_API_KEY")
 
 # Initialize LLM
-@st.cache_resource
-def get_llm():
-    return ChatOpenAI(
-        model_name="gpt-4.1-nano",
-        temperature=1,
-        openai_api_key=OPEN_AI_API_KEY,
-    )
-
 # @st.cache_resource
 # def get_llm():
-#     return AzureChatOpenAI(
-#     azure_endpoint="https://models.inference.ai.azure.com",
-#     azure_deployment="gpt-4.1-nano",
-#     openai_api_version="2025-03-01-preview", 
-#     model_name="gpt-4.1-nano",
-#     temperature=1,
-#     api_key=GITHUB_TOKEN,
+#     return ChatOpenAI(
+#         model_name="gpt-4.1-nano",
+#         temperature=1,
+#         openai_api_key=OPEN_AI_API_KEY,
 #     )
+
+@st.cache_resource
+def get_llm():
+    return AzureChatOpenAI(
+    azure_endpoint="https://models.inference.ai.azure.com",
+    azure_deployment="gpt-4.1-nano",
+    openai_api_version="2025-03-01-preview", 
+    model_name="gpt-4.1-nano",
+    temperature=1,
+    api_key=GITHUB_TOKEN,
+    )
 
 # Pydantic models
 class Metadata(BaseModel):
