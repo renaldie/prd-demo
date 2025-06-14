@@ -7,7 +7,7 @@ import re
 from dotenv import load_dotenv
 load_dotenv()
 
-from typing import List, Dict, Any
+from typing import Optional, List
 
 from langchain_openai import AzureChatOpenAI
 from langchain_openai import ChatOpenAI
@@ -15,6 +15,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from markitdown import MarkItDown
+from langchain_core.runnables import RunnableSequence
 
 # Set page title and configure the page
 st.set_page_config(page_title="Smart PRD", layout="centered")
@@ -48,28 +49,24 @@ def get_llm():
 
 # Pydantic models
 class Metadata(BaseModel):
-    """Metadata of the document."""
-    document_title: Any = Field(description="The name of the document", default=None)
-    document_date: Any = Field(description="The date of the document", default=None)
-    document_status: Any = Field(description="The status of the document", default=None)
-    document_author: Any = Field(description="The author of the document", default=None)
+    document_title: Optional[str] = Field(default=None, description="The name of the document")
+    document_date: Optional[str] = Field(default=None, description="The date of the document")
+    document_status: Optional[str] = Field(default=None, description="The status of the document")
+    document_author: Optional[str] = Field(default=None, description="The author of the document")
 
 class Person(BaseModel):
-    """Person in the document beside the author."""
-    name: Any = Field(description="The name of the person beside the author", default=None)
-    role: Any = Field(description="The role of the person beside the author", default=None)
-    email: Any = Field(description="The email of the person beside the author", default=None)
+    name: Optional[str] = Field(default=None, description="The name of the person beside the author")
+    role: Optional[str] = Field(default=None, description="The role of the person beside the author")
+    email: Optional[str] = Field(default=None, description="The email of the person beside the author")
 
 class Problem(BaseModel):
-    """Overview of the meeting minutes"""
-    vision_opportunity: Any = Field(description="The Vision & Opportunity of the document", default=None)
-    target_use_case: Any = Field(description="The Target Use Case of the document", default=None)
+    vision_opportunity: Optional[str] = Field(default=None, description="The Vision & Opportunity of the document")
+    target_use_case: Optional[str] = Field(default=None, description="The Target Use Case of the document")
 
 class Solution(BaseModel):
-    """Solution to the problem"""
-    goals: Any = Field(description="The goals of the solution", default=None)
-    conceptual_model: Any = Field(description="The conceptual model of the solution", default=None)
-    requirements: Any = Field(description="The requirements of the solution", default=None)
+    goals: Optional[str] = Field(default=None, description="The goals of the solution")
+    conceptual_model: Optional[str] = Field(default=None, description="The conceptual model of the solution")
+    requirements: Optional[str] = Field(default=None, description="The requirements of the solution")
 
 class Summary(BaseModel):
     metadata: Metadata = Field(description="The metadata of the document")
@@ -93,7 +90,6 @@ def extract_prd(prd, max_retries=3):
     - person: object with name, role, email of key stakeholders
     - problem: object with vision_opportunity and target_use_case
     - solution: object with goals, conceptual_model, and requirements
-    {format_instructions}
 
     IMPORTANT: Format all above-mentioned objects as string or list of strings only.
     If a section doesn't contain anything, output null for that section.
@@ -101,12 +97,11 @@ def extract_prd(prd, max_retries=3):
 
     prd_prompt_template = PromptTemplate(
         input_variables=["prd"],
-        template=prd_template,
-        partial_variables={"format_instructions": summary_parser.get_format_instructions()},
-    )
+        template=prd_template
+        )
 
     LLM = get_llm()
-    chain = prd_prompt_template | LLM | summary_parser
+    chain = prd_prompt_template | LLM.with_structured_output(schema=Summary, include_raw=True)
     
     # Simple retry logic
     for attempt in range(max_retries):
@@ -142,65 +137,65 @@ def display_result(original_text, summary, file_object):
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("**Document Title**")
-        st.write(summary.metadata.document_title)
+        st.write(summary['parsed'].metadata.document_title)
         
         st.markdown("**Document Date**")
-        st.write(summary.metadata.document_date)
+        st.write(summary['parsed'].metadata.document_date)
     
     with col2:
         st.markdown("**Document Status**")
-        st.write(summary.metadata.document_status)
+        st.write(summary['parsed'].metadata.document_status)
         
         st.markdown("**Document Author**")
-        st.write(summary.metadata.document_author)
+        st.write(summary['parsed'].metadata.document_author)
 
     ## Person
     st.markdown("### Person")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("**Person Name**")
-        st.write(summary.person.name)
+        st.write(summary['parsed'].person.name)
 
         st.markdown("**Person Role**")
-        st.write(summary.person.role)
+        st.write(summary['parsed'].person.role)
 
     with col2:
         st.markdown("**Person Email**")
-        st.write(summary.person.email)
+        st.write(summary['parsed'].person.email)
 
     ## Problem
     st.markdown("### Problem")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("**Vision & Opportunity**")
-        st.write(summary.problem.vision_opportunity)
+        st.write(summary['parsed'].problem.vision_opportunity)
 
     with col2:
         st.markdown("**Target Use Case**")
-        st.write(summary.problem.target_use_case)
+        st.write(summary['parsed'].problem.target_use_case)
 
     ## Solution
     st.markdown("### Solution")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("**Goals**")
-        st.write(summary.solution.goals)
+        st.write(summary['parsed'].solution.goals)
 
         st.markdown("**Conceptual Model**")
-        st.write(summary.solution.conceptual_model)
+        st.write(summary['parsed'].solution.conceptual_model)
 
     with col2:
         st.markdown("**Requirements**")
-        st.write(summary.solution.requirements)
+        st.write(summary['parsed'].solution.requirements)
 
     with st.expander("Original Document"):
         st.text(original_text[:500] + "...")
 
     with st.expander("JSON Output"):
-        st.json(summary.model_dump())
+        st.json(summary['parsed'].model_dump())
     
     # Download JSON
-    json_str = summary.model_dump_json(indent=2)
+    json_str = summary['parsed'].model_dump_json(indent=2)
     st.download_button(
         label="Download JSON",
         data=json_str,
