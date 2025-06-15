@@ -40,7 +40,7 @@ def get_llm():
     azure_deployment="gpt-4.1-nano",
     openai_api_version="2025-03-01-preview", 
     model_name="gpt-4.1-nano",
-    temperature=1,
+    temperature=0,
     api_key=GITHUB_TOKEN,
     )
 
