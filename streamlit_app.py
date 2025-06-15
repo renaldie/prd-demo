@@ -3,11 +3,9 @@ import tempfile
 import json
 import streamlit as st
 import re
-
+from typing import Optional, List
 from dotenv import load_dotenv
 load_dotenv()
-
-from typing import Optional, List
 
 from langchain_openai import AzureChatOpenAI
 from langchain_openai import ChatOpenAI
@@ -15,7 +13,6 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 from markitdown import MarkItDown
-from langchain_core.runnables import RunnableSequence
 
 # Set page title and configure the page
 st.set_page_config(page_title="Smart PRD", layout="centered")
@@ -24,8 +21,8 @@ st.write("AI-Powered Requirement Management Engineer")
 st.markdown("---")
 
 # Load environment variables
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or st.secrets.get("GITHUB_TOKEN")
-OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY") or st.secrets.get("OPEN_AI_API_KEY")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN") or st.secrets.get("GITHUB_TOKEN")
+OPEN_AI_API_KEY = os.getenv("OPEN_AI_API_KEY") or st.secrets.get("OPEN_AI_API_KEY")
 
 # Initialize LLM
 # @st.cache_resource
